@@ -5,15 +5,16 @@ class LocalBridge < Formula
 
   on_arm do
     url "https://github.com/Juliangresham/homebrew-openframe/releases/download/companion-v0.1.0/openframe-companion-0.1.0-darwin-arm64.tar.gz"
-    sha256 "e0c0cf65e565d8ffb9821c8fa8ace5e79f5f75e3dc39e7aed56b16532fddab5e"
+    sha256 "75a7da29743e16c258dc54fe5c04b250b647af790216e3517690feee67ab4900"
   end
   on_intel do
     url "https://github.com/Juliangresham/homebrew-openframe/releases/download/companion-v0.1.0/openframe-companion-0.1.0-darwin-amd64.tar.gz"
-    sha256 "472df28cc8eb2e51c116719cca385f86a1bcbc9418e3daa94db3165d12615e51"
+    sha256 "8ed11e3f32374b80adfbff8919bc6c102d5de6a22d8083ff624ec21f618ddbc3"
   end
 
   def install
     bin.install "openframe-companion"
+    # Re-apply the ad-hoc signature last, so it survives Homebrew's relocation.
     system "codesign", "-s", "-", "--force", bin/"openframe-companion"
   end
 
