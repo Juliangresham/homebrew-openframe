@@ -5,11 +5,11 @@ class LocalBridge < Formula
 
   on_arm do
     url "https://github.com/Juliangresham/homebrew-openframe/releases/download/companion-v0.4.7/openframe-companion-0.4.7-darwin-arm64.tar.gz"
-    sha256 "eab691b98de8fff1a3f0250f5e0a1f93d88bd2675067f93149363d0da0f21435"
+    sha256 "eaca476007c73027e709f22194f3ea4303da654b5e38d562a5faf5960dfe9f2c"
   end
   on_intel do
     url "https://github.com/Juliangresham/homebrew-openframe/releases/download/companion-v0.4.7/openframe-companion-0.4.7-darwin-amd64.tar.gz"
-    sha256 "0ee8cd0e00cdf88ce73105ea4d0e7987214ec965cf8422abed7acb43852830ff"
+    sha256 "d8afea844e139757816d04b9fc35a2b4741aa99965d4527dff3308e3971d62cb"
   end
 
   def install
