@@ -1,15 +1,15 @@
 class LocalBridge < Formula
   desc "Open Frame local companion: trusted-HTTPS bridge to local Ollama"
   homepage "https://open-frame.app"
-  version "0.6.2"
+  version "0.6.3"
 
   on_arm do
-    url "https://github.com/Juliangresham/homebrew-openframe/releases/download/companion-v0.6.2/openframe-companion-0.6.2-darwin-arm64.tar.gz"
-    sha256 "ad3b6b636f9f9f4715c3fef14fd886c5628cd3b176cf97961db4dd22e74a5950"
+    url "https://github.com/Juliangresham/homebrew-openframe/releases/download/companion-v0.6.3/openframe-companion-0.6.3-darwin-arm64.tar.gz"
+    sha256 "1290157e5d6119f91ee7b6397b2363cc2b312b96e0370d147355f0531d992b14"
   end
   on_intel do
-    url "https://github.com/Juliangresham/homebrew-openframe/releases/download/companion-v0.6.2/openframe-companion-0.6.2-darwin-amd64.tar.gz"
-    sha256 "1ec6a46789d36b4eb0c7c674e6194543232a8ff29b02f3e85e03f444861a3b19"
+    url "https://github.com/Juliangresham/homebrew-openframe/releases/download/companion-v0.6.3/openframe-companion-0.6.3-darwin-amd64.tar.gz"
+    sha256 "d928534551cfe39af93d9acd036e6efe4f02684b9d78a605e15b84a7c31b48d3"
   end
 
   def install
