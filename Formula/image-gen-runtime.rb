@@ -28,7 +28,21 @@ class ImageGenRuntime < Formula
   version "1.10.1"
   license "AGPL-3.0-only"
 
-  depends_on "git"
+  # NO `depends_on "git"`, deliberately, and please do not add it back.
+  #
+  # Git IS needed, both to fetch the url above and by `launch.py`, which clones this runtime's
+  # pinned repositories during post_install. It is simply already there: Homebrew cannot run
+  # without the Xcode command line tools, which ship /usr/bin/git, and Homebrew's own download
+  # strategy calls Utils::Git.ensure_installed! and pulls the git formula itself in the rare
+  # case that git really is unusable. Declaring it bought nothing.
+  #
+  # What it COST was real. The dependency poured Homebrew's git into /opt/homebrew/bin, ahead
+  # of Apple's on PATH. macOS binds a keychain credential to the specific binaries allowed to
+  # read it, so replacing the git binary orphaned a github.com credential stored years earlier:
+  # the helper returned -128 (errSecUserCanceled) and every `git push` from a non-interactive
+  # shell failed with "could not read Username". Installing an image generator should not
+  # rearrange the user's git, and a formula that re-pours that binary on every reinstall
+  # re-breaks it each time.
   depends_on "python@3.11"
 
   def install
