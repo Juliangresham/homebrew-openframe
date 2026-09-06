@@ -1,29 +1,25 @@
 # frozen_string_literal: true
 
-# packaging/homebrew/image-gen-runtime.rb
+# packaging/homebrew/sd-webui.rb
 #
-# The deprecated former name of the Open Frame Stable Diffusion WebUI formula, renamed
-# to sd-webui on 2026-09-06 (see sd-webui.rb). This file stays, and remains installable,
-# so an existing install keeps working and `brew upgrade` points to the new name; new
-# installs should use juliangresham/openframe/sd-webui instead. It is AUTOMATIC1111's
-# Stable Diffusion web UI, pinned to one commit, with its REST API on, run as a
-# background service. Published to the juliangresham/openframe tap by
-# .github/workflows/release-homebrew-formulae.yml, so an existing user installs and
-# starts it exactly as before:
+# Stable Diffusion WebUI (AUTOMATIC1111), pinned to one commit, with its REST API on,
+# run as a background service. Published to the juliangresham/openframe tap by
+# .github/workflows/release-homebrew-formulae.yml, so users install it exactly like the
+# companion:
 #
-#   brew install juliangresham/openframe/image-gen-runtime
-#   brew services start image-gen-runtime
+#   brew install juliangresham/openframe/sd-webui
+#   brew services start sd-webui
 #
 # A script formula, not a cask: nothing here is a binary we build, so nothing needs
 # signing. The heavy work (torch, four helper repositories, the requirements) happens
 # at INSTALL time, inside `post_install` (see the comment there for why not `install`),
 # so the first service start takes seconds, not minutes. Everything the runtime writes
 # at run time lives OUTSIDE the Cellar: user
-# data in ~/.openframe/image-runtime (settings, outputs, extensions), checkpoints in
-# ~/.openframe/image-models (mirroring ~/.ollama/models: installable and removable on
+# data in ~/.openframe/sd-webui (settings, outputs, extensions), checkpoints in
+# ~/.openframe/sd-models (mirroring ~/.ollama/models: installable and removable on
 # their own). Uninstalling the formula leaves both folders alone.
-class ImageGenRuntime < Formula
-  desc "AUTOMATIC1111 Stable Diffusion API runtime for Open Frame"
+class SdWebui < Formula
+  desc "Stable Diffusion WebUI (AUTOMATIC1111) with its API on, for Open Frame"
   homepage "https://open-frame.app"
   # The v1.10.1 line. The COMMIT is the source of truth: it is the one verified end to
   # end on 2026-09-03 (Python 3.11, torch 2.3.1 on Apple Silicon).
@@ -31,13 +27,6 @@ class ImageGenRuntime < Formula
       revision: "82a973c04367123ae98bd9abdf80d9eda9b910e2"
   version "1.10.1"
   license "AGPL-3.0-only"
-
-  # Renamed on 2026-09-06. This name stays so an existing install keeps working and
-  # `brew upgrade` says where to go; new installs use juliangresham/openframe/sd-webui.
-  # `replacement_formula:` makes Homebrew print its own "Replacement: brew install …"
-  # line, and `because:` is interpolated into "deprecated because it #{reason}!", so the
-  # reason itself must not restate "it" or repeat the install command.
-  deprecate! date: "2026-09-06", because: "was renamed to sd-webui", replacement_formula: "juliangresham/openframe/sd-webui"
 
   # NO `depends_on "git"`, deliberately, and please do not add it back.
   #
@@ -56,15 +45,16 @@ class ImageGenRuntime < Formula
   # re-breaks it each time.
   depends_on "python@3.11"
 
-  # Reverse of the guard on sd-webui.rb: this shim and the renamed formula must never be
-  # installed and started together, since both bind port 7860 and share the data
-  # directory this formula still writes to.
-  conflicts_with "sd-webui", because: "it was renamed to sd-webui"
+  # Both formulas bind port 7860 and write under $HOME/.openframe, so having the old
+  # service running while this one installs and starts moves that data out from under
+  # the still-running process. Refuse the install outright rather than leave a mess with
+  # no message; the caveats block below spells out the upgrade path.
+  conflicts_with "image-gen-runtime", because: "both run Stable Diffusion WebUI on port 7860 and share its data directory"
 
   def install
     libexec.install Dir["*"]
-    (bin/"image-gen-runtime").write launcher(libexec/"venv")
-    (bin/"image-gen-runtime").chmod 0755
+    (bin/"sd-webui").write launcher(libexec/"venv")
+    (bin/"sd-webui").chmod 0755
   end
 
   # Building the venv here, and not in `install`, is load-bearing, not a style choice.
@@ -139,11 +129,15 @@ class ImageGenRuntime < Formula
     mps_flags = OS.mac? ? "--upcast-sampling --no-half-vae --use-cpu interrogate" : ""
     <<~SH
       #!/bin/bash
-      # Open Frame image generation runtime launcher (written by the Homebrew formula).
+      # Stable Diffusion WebUI launcher for Open Frame (written by the Homebrew formula).
       # Runs AUTOMATIC1111 with its API on, bound to loopback, all data outside the Cellar.
       set -eu
-      DATA="$HOME/.openframe/image-runtime"
-      MODELS="$HOME/.openframe/image-models"
+      DATA="$HOME/.openframe/sd-webui"
+      MODELS="$HOME/.openframe/sd-models"
+      # One-time move from the names this formula used before 2026-09-06, so an upgrade
+      # keeps the settings and does not download the 2 GB starter checkpoint again.
+      if [ -d "$HOME/.openframe/image-runtime" ] && [ ! -e "$DATA" ]; then mv "$HOME/.openframe/image-runtime" "$DATA"; fi
+      if [ -d "$HOME/.openframe/image-models" ] && [ ! -e "$MODELS" ]; then mv "$HOME/.openframe/image-models" "$MODELS"; fi
       mkdir -p "$DATA" "$MODELS"
       # The runtime opens its own page in the default browser on every start unless its
       # settings say otherwise. A background service must never do that.
@@ -165,15 +159,29 @@ class ImageGenRuntime < Formula
   end
 
   service do
-    run [opt_bin/"image-gen-runtime"]
+    run [opt_bin/"sd-webui"]
     keep_alive true
-    log_path var/"log/image-gen-runtime.log"
-    error_log_path var/"log/image-gen-runtime.log"
+    log_path var/"log/sd-webui.log"
+    error_log_path var/"log/sd-webui.log"
+  end
+
+  def caveats
+    <<~EOS
+      Upgrading from the old image-gen-runtime formula? Stop and remove it FIRST,
+      before starting this one:
+
+        brew services stop image-gen-runtime && brew uninstall image-gen-runtime
+
+      Both bind port 7860 and share the same data directory, so running them at the
+      same time corrupts state. Once that's done, this formula's first start moves
+      ~/.openframe/image-runtime to ~/.openframe/sd-webui and ~/.openframe/image-models
+      to ~/.openframe/sd-models, one time, so nothing is re-downloaded.
+    EOS
   end
 
   test do
     assert_path_exists libexec/"venv/bin/python"
-    assert_match "--api", (bin/"image-gen-runtime").read
-    assert_predicate bin/"image-gen-runtime", :executable?
+    assert_match "--api", (bin/"sd-webui").read
+    assert_predicate bin/"sd-webui", :executable?
   end
 end
